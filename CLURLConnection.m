@@ -143,12 +143,12 @@ static inline NSString* httpErrorDescription(NSInteger statusCode)
 
 - (void) forwardInvocation:(NSInvocation *)invocation
 {
-    SEL selector = [invocation selector];
+	SEL selector = [invocation selector];
 
-    if ([delegate respondsToSelector:selector])
-        [invocation invokeWithTarget:delegate];
-    else
-        [self doesNotRecognizeSelector:selector];
+	if ([delegate respondsToSelector:selector])
+		[invocation invokeWithTarget:delegate];
+	else
+		[self doesNotRecognizeSelector:selector];
 }
 
 @end
