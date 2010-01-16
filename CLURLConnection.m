@@ -1,5 +1,7 @@
 #import "CLURLConnection.h"
 
+#import <objc/runtime.h>
+
 NSString *const HTTPErrorDomain = @"HTTPErrorDomain";
 
 static inline NSString* httpErrorDescription(NSInteger statusCode)
@@ -86,6 +88,7 @@ static inline NSString* httpErrorDescription(NSInteger statusCode)
 {
 	BOOL connectionFailed;
 	id delegate;
+	NSMutableSet *selectors;
 }
 
 - (void) connection:(NSURLConnection *)connection didReceiveResponse:(NSURLResponse *)response;
@@ -96,9 +99,30 @@ static inline NSString* httpErrorDescription(NSInteger statusCode)
 
 @implementation CLURLConnectionDelegate
 
-- (void) setDelegate:(id)theDelegate;
+- (id) initWithDelegate:(id)theDelegate
 {
-	delegate = theDelegate;
+	self = [super init];
+	if (self != nil) {
+		delegate = [theDelegate retain];
+
+		selectors = [[NSMutableSet alloc] init];
+		Method *methods = NULL;
+		unsigned int methodCount = 0;
+		methods = class_copyMethodList([self class], &methodCount);
+		for (unsigned int i = 0; i < methodCount; i++) {
+			const char *methodName = sel_getName(method_getName(methods[i]));
+			[selectors addObject:[NSString stringWithCString:methodName encoding:NSASCIIStringEncoding]];
+		}
+		free(methods);
+	}
+	return self;
+}
+
+- (void) dealloc
+{
+	[delegate release];
+	[selectors release];
+	[super dealloc];
 }
 
 - (void) connection:(NSURLConnection *)connection didReceiveResponse:(NSURLResponse *)response
@@ -139,13 +163,20 @@ static inline NSString* httpErrorDescription(NSInteger statusCode)
 
 - (BOOL) respondsToSelector:(SEL)selector
 {
-	return [delegate respondsToSelector:selector];
+	if ([selectors containsObject:NSStringFromSelector(selector)])
+		return YES;
+	else
+		return [delegate respondsToSelector:selector];
 }
 
 - (NSMethodSignature *) methodSignatureForSelector:(SEL)selector
 {
 	NSMethodSignature *methodSignature = [[self class] instanceMethodSignatureForSelector:selector];
-	return methodSignature ? methodSignature : [[delegate class] instanceMethodSignatureForSelector:selector];
+
+	if (methodSignature)
+		return methodSignature;
+	else
+		return [[delegate class] instanceMethodSignatureForSelector:selector];
 }
 
 - (void) forwardInvocation:(NSInvocation *)invocation
@@ -171,8 +202,7 @@ static inline NSString* httpErrorDescription(NSInteger statusCode)
 
 - (id) initWithRequest:(NSURLRequest *)request delegate:(id)delegate startImmediately:(BOOL)startImmediately
 {
-	CLURLConnectionDelegate *clDelegate = [[[CLURLConnectionDelegate alloc] init] autorelease];
-	[clDelegate setDelegate:delegate];
+	CLURLConnectionDelegate *clDelegate = [[[CLURLConnectionDelegate alloc] initWithDelegate:delegate] autorelease];
 	return [super initWithRequest:request delegate:clDelegate startImmediately:startImmediately];
 }
 
