@@ -144,7 +144,8 @@ static inline NSString* httpErrorDescription(NSInteger statusCode)
 
 - (NSMethodSignature *) methodSignatureForSelector:(SEL)selector
 {
-	return [[delegate class] instanceMethodSignatureForSelector:selector];
+	NSMethodSignature *methodSignature = [[self class] instanceMethodSignatureForSelector:selector];
+	return methodSignature ? methodSignature : [[delegate class] instanceMethodSignatureForSelector:selector];
 }
 
 - (void) forwardInvocation:(NSInvocation *)invocation
