@@ -195,7 +195,7 @@ static inline NSString* httpErrorDescription(NSInteger statusCode)
 
 @implementation CLURLConnection
 
-+ (CLURLConnection *) connectionWithRequest:(NSURLRequest *)request delegate:(id)delegate
++ (id) connectionWithRequest:(NSURLRequest *)request delegate:(id)delegate
 {
 	return [[[self alloc] initWithRequest:request delegate:delegate] autorelease];
 }
