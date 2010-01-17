@@ -7,80 +7,48 @@ NSString *const HTTPErrorDomain = @"HTTPErrorDomain";
 
 static inline NSString* httpErrorDescription(NSInteger statusCode)
 {
-	NSString *errorDescription = NSLocalizedStringFromTable(@"Unknowns Status Code", @"HTTPErrorCodes", "HTTP Unknown Status Code");
+	NSString *desc = NSLocalizedStringFromTable(@"Unknowns Status Code", @"HTTPErrors", "HTTP Unknown Status Code");
 
-	if (statusCode == 400)
-		errorDescription = NSLocalizedStringFromTable(@"Bad Request",                     @"HTTPErrorCodes", "HTTP Status Code 400");
-	else if (statusCode == 401)
-		errorDescription = NSLocalizedStringFromTable(@"Unauthorized",                    @"HTTPErrorCodes", "HTTP Status Code 401");
-	else if (statusCode == 402)
-		errorDescription = NSLocalizedStringFromTable(@"Payment Required",                @"HTTPErrorCodes", "HTTP Status Code 402");
-	else if (statusCode == 403)
-		errorDescription = NSLocalizedStringFromTable(@"Forbidden",                       @"HTTPErrorCodes", "HTTP Status Code 403");
-	else if (statusCode == 404)
-		errorDescription = NSLocalizedStringFromTable(@"Not Found",                       @"HTTPErrorCodes", "HTTP Status Code 404");
-	else if (statusCode == 405)
-		errorDescription = NSLocalizedStringFromTable(@"Method Not Allowed",              @"HTTPErrorCodes", "HTTP Status Code 405");
-	else if (statusCode == 406)
-		errorDescription = NSLocalizedStringFromTable(@"Not Acceptable",                  @"HTTPErrorCodes", "HTTP Status Code 406");
-	else if (statusCode == 407)
-		errorDescription = NSLocalizedStringFromTable(@"Proxy Authentication Required",   @"HTTPErrorCodes", "HTTP Status Code 407");
-	else if (statusCode == 408)
-		errorDescription = NSLocalizedStringFromTable(@"Request Timeout",                 @"HTTPErrorCodes", "HTTP Status Code 408");
-	else if (statusCode == 409)
-		errorDescription = NSLocalizedStringFromTable(@"Conflict",                        @"HTTPErrorCodes", "HTTP Status Code 409");
-	else if (statusCode == 410)
-		errorDescription = NSLocalizedStringFromTable(@"Gone",                            @"HTTPErrorCodes", "HTTP Status Code 410");
-	else if (statusCode == 411)
-		errorDescription = NSLocalizedStringFromTable(@"Length Required",                 @"HTTPErrorCodes", "HTTP Status Code 411");
-	else if (statusCode == 412)
-		errorDescription = NSLocalizedStringFromTable(@"Precondition Failed",             @"HTTPErrorCodes", "HTTP Status Code 412");
-	else if (statusCode == 413)
-		errorDescription = NSLocalizedStringFromTable(@"Request Entity Too Large",        @"HTTPErrorCodes", "HTTP Status Code 413");
-	else if (statusCode == 414)
-		errorDescription = NSLocalizedStringFromTable(@"Request-URI Too Long",            @"HTTPErrorCodes", "HTTP Status Code 414");
-	else if (statusCode == 415)
-		errorDescription = NSLocalizedStringFromTable(@"Unsupported Media Type",          @"HTTPErrorCodes", "HTTP Status Code 415");
-	else if (statusCode == 416)
-		errorDescription = NSLocalizedStringFromTable(@"Requested Range Not Satisfiable", @"HTTPErrorCodes", "HTTP Status Code 416");
-	else if (statusCode == 417)
-		errorDescription = NSLocalizedStringFromTable(@"Expectation Failed",              @"HTTPErrorCodes", "HTTP Status Code 417");
-	else if (statusCode == 418)
-		errorDescription = NSLocalizedStringFromTable(@"I'm a teapot",                    @"HTTPErrorCodes", "HTTP Status Code 418");
-	else if (statusCode == 422)
-		errorDescription = NSLocalizedStringFromTable(@"Unprocessable Entity",            @"HTTPErrorCodes", "HTTP Status Code 422");
-	else if (statusCode == 423)
-		errorDescription = NSLocalizedStringFromTable(@"Locked",                          @"HTTPErrorCodes", "HTTP Status Code 423");
-	else if (statusCode == 424)
-		errorDescription = NSLocalizedStringFromTable(@"Failed Dependency",               @"HTTPErrorCodes", "HTTP Status Code 424");
-	else if (statusCode == 425)
-		errorDescription = NSLocalizedStringFromTable(@"Unordered Collection",            @"HTTPErrorCodes", "HTTP Status Code 425");
-	else if (statusCode == 426)
-		errorDescription = NSLocalizedStringFromTable(@"Upgrade Required",                @"HTTPErrorCodes", "HTTP Status Code 426");
-	else if (statusCode == 449)
-		errorDescription = NSLocalizedStringFromTable(@"Retry With",                      @"HTTPErrorCodes", "HTTP Status Code 449");
-	else if (statusCode == 500)
-		errorDescription = NSLocalizedStringFromTable(@"Internal Server Error",           @"HTTPErrorCodes", "HTTP Status Code 500");
-	else if (statusCode == 501)
-		errorDescription = NSLocalizedStringFromTable(@"Not Implemented",                 @"HTTPErrorCodes", "HTTP Status Code 501");
-	else if (statusCode == 502)
-		errorDescription = NSLocalizedStringFromTable(@"Bad Gateway",                     @"HTTPErrorCodes", "HTTP Status Code 502");
-	else if (statusCode == 503)
-		errorDescription = NSLocalizedStringFromTable(@"Service Unavailable",             @"HTTPErrorCodes", "HTTP Status Code 503");
-	else if (statusCode == 504)
-		errorDescription = NSLocalizedStringFromTable(@"Gateway Timeout",                 @"HTTPErrorCodes", "HTTP Status Code 504");
-	else if (statusCode == 505)
-		errorDescription = NSLocalizedStringFromTable(@"HTTP Version Not Supported",      @"HTTPErrorCodes", "HTTP Status Code 505");
-	else if (statusCode == 506)
-		errorDescription = NSLocalizedStringFromTable(@"Variant Also Negotiates",         @"HTTPErrorCodes", "HTTP Status Code 506");
-	else if (statusCode == 507)
-		errorDescription = NSLocalizedStringFromTable(@"Insufficient Storage",            @"HTTPErrorCodes", "HTTP Status Code 507");
-	else if (statusCode == 509)
-		errorDescription = NSLocalizedStringFromTable(@"Bandwidth Limit Exceeded",        @"HTTPErrorCodes", "HTTP Status Code 509");
-	else if (statusCode == 510)
-		errorDescription = NSLocalizedStringFromTable(@"Not Extended",                    @"HTTPErrorCodes", "HTTP Status Code 510");
+	switch (statusCode)
+	{
+		case 400: desc = NSLocalizedStringFromTable(@"Bad Request",                     @"HTTPErrors", "HTTP Status Code 400"); break;
+		case 401: desc = NSLocalizedStringFromTable(@"Unauthorized",                    @"HTTPErrors", "HTTP Status Code 401"); break;
+		case 402: desc = NSLocalizedStringFromTable(@"Payment Required",                @"HTTPErrors", "HTTP Status Code 402"); break;
+		case 403: desc = NSLocalizedStringFromTable(@"Forbidden",                       @"HTTPErrors", "HTTP Status Code 403"); break;
+		case 404: desc = NSLocalizedStringFromTable(@"Not Found",                       @"HTTPErrors", "HTTP Status Code 404"); break;
+		case 405: desc = NSLocalizedStringFromTable(@"Method Not Allowed",              @"HTTPErrors", "HTTP Status Code 405"); break;
+		case 406: desc = NSLocalizedStringFromTable(@"Not Acceptable",                  @"HTTPErrors", "HTTP Status Code 406"); break;
+		case 407: desc = NSLocalizedStringFromTable(@"Proxy Authentication Required",   @"HTTPErrors", "HTTP Status Code 407"); break;
+		case 408: desc = NSLocalizedStringFromTable(@"Request Timeout",                 @"HTTPErrors", "HTTP Status Code 408"); break;
+		case 409: desc = NSLocalizedStringFromTable(@"Conflict",                        @"HTTPErrors", "HTTP Status Code 409"); break;
+		case 410: desc = NSLocalizedStringFromTable(@"Gone",                            @"HTTPErrors", "HTTP Status Code 410"); break;
+		case 411: desc = NSLocalizedStringFromTable(@"Length Required",                 @"HTTPErrors", "HTTP Status Code 411"); break;
+		case 412: desc = NSLocalizedStringFromTable(@"Precondition Failed",             @"HTTPErrors", "HTTP Status Code 412"); break;
+		case 413: desc = NSLocalizedStringFromTable(@"Request Entity Too Large",        @"HTTPErrors", "HTTP Status Code 413"); break;
+		case 414: desc = NSLocalizedStringFromTable(@"Request-URI Too Long",            @"HTTPErrors", "HTTP Status Code 414"); break;
+		case 415: desc = NSLocalizedStringFromTable(@"Unsupported Media Type",          @"HTTPErrors", "HTTP Status Code 415"); break;
+		case 416: desc = NSLocalizedStringFromTable(@"Requested Range Not Satisfiable", @"HTTPErrors", "HTTP Status Code 416"); break;
+		case 417: desc = NSLocalizedStringFromTable(@"Expectation Failed",              @"HTTPErrors", "HTTP Status Code 417"); break;
+		case 418: desc = NSLocalizedStringFromTable(@"I'm a teapot",                    @"HTTPErrors", "HTTP Status Code 418"); break;
+		case 422: desc = NSLocalizedStringFromTable(@"Unprocessable Entity",            @"HTTPErrors", "HTTP Status Code 422"); break;
+		case 423: desc = NSLocalizedStringFromTable(@"Locked",                          @"HTTPErrors", "HTTP Status Code 423"); break;
+		case 424: desc = NSLocalizedStringFromTable(@"Failed Dependency",               @"HTTPErrors", "HTTP Status Code 424"); break;
+		case 425: desc = NSLocalizedStringFromTable(@"Unordered Collection",            @"HTTPErrors", "HTTP Status Code 425"); break;
+		case 426: desc = NSLocalizedStringFromTable(@"Upgrade Required",                @"HTTPErrors", "HTTP Status Code 426"); break;
+		case 449: desc = NSLocalizedStringFromTable(@"Retry With",                      @"HTTPErrors", "HTTP Status Code 449"); break;
+		case 500: desc = NSLocalizedStringFromTable(@"Internal Server Error",           @"HTTPErrors", "HTTP Status Code 500"); break;
+		case 501: desc = NSLocalizedStringFromTable(@"Not Implemented",                 @"HTTPErrors", "HTTP Status Code 501"); break;
+		case 502: desc = NSLocalizedStringFromTable(@"Bad Gateway",                     @"HTTPErrors", "HTTP Status Code 502"); break;
+		case 503: desc = NSLocalizedStringFromTable(@"Service Unavailable",             @"HTTPErrors", "HTTP Status Code 503"); break;
+		case 504: desc = NSLocalizedStringFromTable(@"Gateway Timeout",                 @"HTTPErrors", "HTTP Status Code 504"); break;
+		case 505: desc = NSLocalizedStringFromTable(@"HTTP Version Not Supported",      @"HTTPErrors", "HTTP Status Code 505"); break;
+		case 506: desc = NSLocalizedStringFromTable(@"Variant Also Negotiates",         @"HTTPErrors", "HTTP Status Code 506"); break;
+		case 507: desc = NSLocalizedStringFromTable(@"Insufficient Storage",            @"HTTPErrors", "HTTP Status Code 507"); break;
+		case 509: desc = NSLocalizedStringFromTable(@"Bandwidth Limit Exceeded",        @"HTTPErrors", "HTTP Status Code 509"); break;
+		case 510: desc = NSLocalizedStringFromTable(@"Not Extended",                    @"HTTPErrors", "HTTP Status Code 510"); break;
+	}
 
-	return errorDescription;
+	return desc;
 }
 
 
