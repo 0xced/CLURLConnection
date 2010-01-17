@@ -11,6 +11,10 @@
  * instead send the connection:didFailWithError: message to its delegate with
  * an appropriate NSError of the hereafter defined HTTPErrorDomain.
  *
+ * As a bonus, CLURLConnection also fixes a crasher when calling start without
+ * calling scheduleInRunLoop:forMode: first.
+ * See http://www.mail-archive.com/cocoa-dev@lists.apple.com/msg32455.html
+ *
  * Tested on Mac OS X 10.5.8 and iPhone OS 3.1.2
  */
 
@@ -18,7 +22,11 @@
 
 extern NSString *const HTTPErrorDomain;
 
-@interface CLURLConnection : NSURLConnection {}
+@interface CLURLConnection : NSURLConnection
+{
+	@private
+	BOOL isScheduled;
+}
 @end
 
 /*

@@ -1,5 +1,6 @@
 #import "CLURLConnection.h"
 
+#import <Foundation/Foundation.h>
 #import <objc/runtime.h>
 
 NSString *const HTTPErrorDomain = @"HTTPErrorDomain";
@@ -202,6 +203,7 @@ static inline NSString* httpErrorDescription(NSInteger statusCode)
 
 - (id) initWithRequest:(NSURLRequest *)request delegate:(id)delegate startImmediately:(BOOL)startImmediately
 {
+	isScheduled = startImmediately;
 	CLURLConnectionDelegate *clDelegate = [[[CLURLConnectionDelegate alloc] initWithDelegate:delegate] autorelease];
 	return [super initWithRequest:request delegate:clDelegate startImmediately:startImmediately];
 }
@@ -209,6 +211,20 @@ static inline NSString* httpErrorDescription(NSInteger statusCode)
 - (id) initWithRequest:(NSURLRequest *)request delegate:(id)delegate
 {
 	return [self initWithRequest:request delegate:delegate startImmediately:YES];
+}
+
+- (void) scheduleInRunLoop:(NSRunLoop *)runLoop forMode:(NSString *)mode
+{
+	isScheduled = YES;
+	[super scheduleInRunLoop:runLoop forMode:mode];
+}
+
+- (void) start
+{
+	if (!isScheduled)
+		[self scheduleInRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
+
+	[super start];
 }
 
 @end
