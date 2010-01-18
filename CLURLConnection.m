@@ -120,14 +120,26 @@ static inline NSString* httpErrorDescription(NSInteger statusCode)
 
 - (void) connection:(NSURLConnection *)connection didReceiveData:(NSData *)data
 {
-	if (!connectionFailed && [delegate respondsToSelector:@selector(connection:didReceiveData:)])
+	if (connectionFailed)
+		return;
+
+	if ([delegate respondsToSelector:@selector(connection:didReceiveData:)])
 		[delegate connection:connection didReceiveData:data];
 }
 
 - (void) connectionDidFinishLoading:(NSURLConnection *)connection
 {
-	if (!connectionFailed && [delegate respondsToSelector:@selector(connectionDidFinishLoading:)])
+	if (connectionFailed)
+		return;
+
+	if ([delegate respondsToSelector:@selector(connectionDidFinishLoading:)])
 		[delegate connectionDidFinishLoading:connection];
+}
+
+- (void) connection:(NSURLConnection *)connection didFailWithError:(NSError *)error
+{
+	if ([delegate respondsToSelector:@selector(connection:didFailWithError:)])
+		[delegate connection:connection didFailWithError:error];
 }
 
 - (BOOL) respondsToSelector:(SEL)selector
