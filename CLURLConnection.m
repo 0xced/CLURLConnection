@@ -113,7 +113,7 @@ static inline NSString* httpErrorDescription(NSInteger statusCode)
 
 - (NSMethodSignature *) methodSignatureForSelector:(SEL)selector
 {
-	return [[delegate class] instanceMethodSignatureForSelector:selector];
+	return [delegate methodSignatureForSelector:selector];
 }
 
 - (void) forwardInvocation:(NSInvocation *)invocation
