@@ -53,63 +53,48 @@ static inline NSString* httpErrorDescription(NSInteger statusCode)
 
 
 
-@interface CLURLConnectionDelegate : NSObject
+@interface CLURLConnectionDelegateProxy : NSProxy
 {
-	BOOL connectionFailed;
 	id delegate;
-	NSMutableSet *selectors;
 }
 
 - (void) connection:(NSURLConnection *)connection didReceiveResponse:(NSURLResponse *)response;
-- (void) connection:(NSURLConnection *)connection didReceiveData:(NSData *)data;
-- (void) connectionDidFinishLoading:(NSURLConnection *)connection;
 
 @end
 
-@implementation CLURLConnectionDelegate
+@implementation CLURLConnectionDelegateProxy
 
 - (id) initWithDelegate:(id)theDelegate
 {
-	self = [super init];
-	if (self != nil) {
-		delegate = [theDelegate retain];
-
-		selectors = [[NSMutableSet alloc] init];
-		Method *methods = NULL;
-		unsigned int methodCount = 0;
-		methods = class_copyMethodList([self class], &methodCount);
-		for (unsigned int i = 0; i < methodCount; i++) {
-			const char *methodName = sel_getName(method_getName(methods[i]));
-			[selectors addObject:[NSString stringWithCString:methodName encoding:NSASCIIStringEncoding]];
-		}
-		free(methods);
-	}
+	delegate = [theDelegate retain];
 	return self;
 }
 
 - (void) dealloc
 {
 	[delegate release];
-	[selectors release];
 	[super dealloc];
 }
 
 - (void) connection:(NSURLConnection *)connection didReceiveResponse:(NSURLResponse *)response
 {
-	connectionFailed = NO;
 	NSInteger statusCode = 0;
 	if ([response isKindOfClass:[NSHTTPURLResponse class]])
 		statusCode = [(NSHTTPURLResponse*)response statusCode];
 
 	if (statusCode >= 400)
 	{
-		connectionFailed = YES;
-		NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys:
-		                             [response URL], NSURLErrorKey,
-		                             [[response URL] absoluteString], NSErrorFailingURLStringKey,
-		                             httpErrorDescription(statusCode), NSLocalizedDescriptionKey, nil];
-		NSError *error = [NSError errorWithDomain:HTTPErrorDomain code:statusCode userInfo:userInfo];
-		[self connection:connection didFailWithError:error];
+		[connection cancel];
+
+		if ([delegate respondsToSelector:@selector(connection:didFailWithError:)])
+		{
+			NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys:
+			                             [response URL], NSURLErrorKey,
+			                             [[response URL] absoluteString], NSErrorFailingURLStringKey,
+			                             httpErrorDescription(statusCode), NSLocalizedDescriptionKey, nil];
+			NSError *error = [NSError errorWithDomain:HTTPErrorDomain code:statusCode userInfo:userInfo];
+			[delegate connection:connection didFailWithError:error];
+		}
 	}
 	else
 	{
@@ -118,33 +103,9 @@ static inline NSString* httpErrorDescription(NSInteger statusCode)
 	}
 }
 
-- (void) connection:(NSURLConnection *)connection didReceiveData:(NSData *)data
-{
-	if (connectionFailed)
-		return;
-
-	if ([delegate respondsToSelector:@selector(connection:didReceiveData:)])
-		[delegate connection:connection didReceiveData:data];
-}
-
-- (void) connectionDidFinishLoading:(NSURLConnection *)connection
-{
-	if (connectionFailed)
-		return;
-
-	if ([delegate respondsToSelector:@selector(connectionDidFinishLoading:)])
-		[delegate connectionDidFinishLoading:connection];
-}
-
-- (void) connection:(NSURLConnection *)connection didFailWithError:(NSError *)error
-{
-	if ([delegate respondsToSelector:@selector(connection:didFailWithError:)])
-		[delegate connection:connection didFailWithError:error];
-}
-
 - (BOOL) respondsToSelector:(SEL)selector
 {
-	if ([selectors containsObject:NSStringFromSelector(selector)])
+	if (selector == @selector(connection:didReceiveResponse:))
 		return YES;
 	else
 		return [delegate respondsToSelector:selector];
@@ -152,22 +113,12 @@ static inline NSString* httpErrorDescription(NSInteger statusCode)
 
 - (NSMethodSignature *) methodSignatureForSelector:(SEL)selector
 {
-	NSMethodSignature *methodSignature = [[self class] instanceMethodSignatureForSelector:selector];
-
-	if (methodSignature)
-		return methodSignature;
-	else
-		return [[delegate class] instanceMethodSignatureForSelector:selector];
+	return [[delegate class] instanceMethodSignatureForSelector:selector];
 }
 
 - (void) forwardInvocation:(NSInvocation *)invocation
 {
-	SEL selector = [invocation selector];
-
-	if ([delegate respondsToSelector:selector])
-		[invocation invokeWithTarget:delegate];
-	else
-		[self doesNotRecognizeSelector:selector];
+	[invocation invokeWithTarget:delegate];
 }
 
 @end
@@ -184,8 +135,8 @@ static inline NSString* httpErrorDescription(NSInteger statusCode)
 - (id) initWithRequest:(NSURLRequest *)request delegate:(id)delegate startImmediately:(BOOL)startImmediately
 {
 	isScheduled = startImmediately;
-	CLURLConnectionDelegate *clDelegate = [[[CLURLConnectionDelegate alloc] initWithDelegate:delegate] autorelease];
-	return [super initWithRequest:request delegate:clDelegate startImmediately:startImmediately];
+	CLURLConnectionDelegateProxy *proxy = [[[CLURLConnectionDelegateProxy alloc] initWithDelegate:delegate] autorelease];
+	return [super initWithRequest:request delegate:proxy startImmediately:startImmediately];
 }
 
 - (id) initWithRequest:(NSURLRequest *)request delegate:(id)delegate
