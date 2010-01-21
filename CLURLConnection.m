@@ -1,7 +1,6 @@
 #import "CLURLConnection.h"
 
 #import <Foundation/Foundation.h>
-#import <objc/runtime.h>
 
 NSString *const HTTPErrorDomain = @"HTTPErrorDomain";
 
