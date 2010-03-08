@@ -21,12 +21,16 @@
 #import <Foundation/NSURLConnection.h>
 
 extern NSString *const HTTPErrorDomain;
+extern NSString *const HTTPBody;
 
 @interface CLURLConnection : NSURLConnection
 {
 	@private
 	BOOL isScheduled;
 }
+
++ (void) setWantsHTTPErrorBody:(BOOL)wantsHTTPErrorBody;
+
 @end
 
 /*

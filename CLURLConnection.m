@@ -3,6 +3,11 @@
 #import <Foundation/Foundation.h>
 
 NSString *const HTTPErrorDomain = @"HTTPErrorDomain";
+NSString *const HTTPBody = @"HTTPBody";
+
+
+static BOOL sWantsHTTPErrorBody = NO;
+
 
 static inline NSString* httpErrorDescription(NSInteger statusCode)
 {
@@ -50,14 +55,32 @@ static inline NSString* httpErrorDescription(NSInteger statusCode)
 	return desc;
 }
 
+static inline NSError* httpError(NSURL *responseURL, NSInteger httpStatusCode, NSData *httpBody)
+{
+	NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys:
+	                         responseURL, NSURLErrorKey,
+	                         responseURL, @"NSErrorFailingURLKey",
+	                         [responseURL absoluteString], NSErrorFailingURLStringKey,
+	                         httpErrorDescription(httpStatusCode), NSLocalizedDescriptionKey,
+	                         httpBody, HTTPBody, nil];
+
+	return [NSError errorWithDomain:HTTPErrorDomain code:httpStatusCode userInfo:userInfo];
+}
+
 
 
 @interface CLURLConnectionDelegateProxy : NSProxy
 {
 	id delegate;
+	NSInteger httpStatusCode;
+	NSMutableData *httpBody;
+	NSURL *responseURL;
 }
 
-- (void) connection:(NSURLConnection *)connection didReceiveResponse:(NSURLResponse *)response;
+- (void) connection:(CLURLConnection *)connection didReceiveResponse:(NSURLResponse *)response;
+- (void) connection:(CLURLConnection *)connection didReceiveData:(NSData *)data;
+- (void) connection:(CLURLConnection *)connection didFailWithError:(NSError *)error;
+- (void) connectionDidFinishLoading:(CLURLConnection *)connection;
 
 @end
 
@@ -75,24 +98,25 @@ static inline NSString* httpErrorDescription(NSInteger statusCode)
 	[super dealloc];
 }
 
-- (void) connection:(NSURLConnection *)connection didReceiveResponse:(NSURLResponse *)response
+- (void) connection:(CLURLConnection *)connection didReceiveResponse:(NSURLResponse *)response
 {
-	NSInteger statusCode = 0;
+	httpStatusCode = 0;
 	if ([response isKindOfClass:[NSHTTPURLResponse class]])
-		statusCode = [(NSHTTPURLResponse*)response statusCode];
+		httpStatusCode = [(NSHTTPURLResponse*)response statusCode];
 
-	if (statusCode >= 400)
+	if (httpStatusCode >= 400)
 	{
-		[connection cancel];
-
-		if ([delegate respondsToSelector:@selector(connection:didFailWithError:)])
+		if (sWantsHTTPErrorBody)
 		{
-			NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys:
-			                             [response URL], NSURLErrorKey,
-			                             [[response URL] absoluteString], NSErrorFailingURLStringKey,
-			                             httpErrorDescription(statusCode), NSLocalizedDescriptionKey, nil];
-			NSError *error = [NSError errorWithDomain:HTTPErrorDomain code:statusCode userInfo:userInfo];
-			[delegate connection:connection didFailWithError:error];
+			httpBody = [[NSMutableData alloc] init];
+			responseURL = [[response URL] retain];
+		}
+		else
+		{
+			[connection cancel];
+
+			if ([delegate respondsToSelector:@selector(connection:didFailWithError:)])
+				[delegate connection:connection didFailWithError:httpError([response URL], httpStatusCode, nil)];
 		}
 	}
 	else
@@ -102,9 +126,49 @@ static inline NSString* httpErrorDescription(NSInteger statusCode)
 	}
 }
 
+- (void) connection:(CLURLConnection *)connection didReceiveData:(NSData *)data
+{
+	[httpBody appendData:data];
+
+	if (httpStatusCode < 400)
+	{
+		if ([delegate respondsToSelector:@selector(connection:didReceiveData:)])
+			[delegate connection:connection didReceiveData:data];
+	}
+}
+
+- (void) connection:(CLURLConnection *)connection didFailWithError:(NSError *)error
+{
+	if ([delegate respondsToSelector:@selector(connection:didFailWithError:)])
+		[delegate connection:connection didFailWithError:error];
+
+	[httpBody release]; httpBody = nil;
+	[responseURL release]; responseURL = nil;
+}
+
+- (void) connectionDidFinishLoading:(CLURLConnection *)connection
+{
+	if (httpStatusCode < 400)
+	{
+		if ([delegate respondsToSelector:@selector(connectionDidFinishLoading:)])
+			[delegate connectionDidFinishLoading:connection];
+	}
+	else
+	{
+		if ([delegate respondsToSelector:@selector(connection:didFailWithError:)])
+			[delegate connection:connection didFailWithError:httpError(responseURL, httpStatusCode, httpBody)];
+	}
+
+	[httpBody release]; httpBody = nil;
+	[responseURL release]; responseURL = nil;
+}
+
 - (BOOL) respondsToSelector:(SEL)selector
 {
-	if (selector == @selector(connection:didReceiveResponse:))
+	if (selector == @selector(connection:didReceiveResponse:) ||
+	    selector == @selector(connection:didReceiveData:) ||
+	    selector == @selector(connection:didFailWithError:) ||
+	    selector == @selector(connectionDidFinishLoading:))
 		return YES;
 	else
 		return [delegate respondsToSelector:selector];
@@ -125,6 +189,11 @@ static inline NSString* httpErrorDescription(NSInteger statusCode)
 
 
 @implementation CLURLConnection
+
++ (void) setWantsHTTPErrorBody:(BOOL)wantsHTTPErrorBody
+{
+	sWantsHTTPErrorBody = wantsHTTPErrorBody;
+}
 
 + (id) connectionWithRequest:(NSURLRequest *)request delegate:(id)delegate
 {
