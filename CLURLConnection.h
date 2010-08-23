@@ -30,6 +30,7 @@ extern NSString *const HTTPBody;
 	NSURLRequest *request;
 }
 
++ (void) setHandleHTTPErrors:(BOOL)handleHTTPErrors;
 + (void) setWantsHTTPErrorBody:(BOOL)wantsHTTPErrorBody;
 
 @end

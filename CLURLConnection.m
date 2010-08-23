@@ -7,6 +7,7 @@ NSString *const HTTPErrorDomain = @"HTTPErrorDomain";
 NSString *const HTTPBody = @"HTTPBody";
 
 
+static BOOL sHandleHTTPErrors = YES;
 static BOOL sWantsHTTPErrorBody = NO;
 
 
@@ -132,7 +133,7 @@ static inline void connectionDidFinishLoading(id delegate, id connection)
 - (void) connection:(CLURLConnection *)connection didReceiveResponse:(NSURLResponse *)response
 {
 	httpStatusCode = 0;
-	if ([response isKindOfClass:[NSHTTPURLResponse class]])
+	if (sHandleHTTPErrors && [response isKindOfClass:[NSHTTPURLResponse class]])
 		httpStatusCode = [(NSHTTPURLResponse*)response statusCode];
 	
 	if (httpStatusCode >= 400)
@@ -214,6 +215,11 @@ __attribute__ ((constructor)) static void initialize(void)
 }
 
 @implementation CLURLConnection
+
++ (void) setHandleHTTPErrors:(BOOL)handleHTTPErrors
+{
+	sHandleHTTPErrors = handleHTTPErrors;
+}
 
 + (void) setWantsHTTPErrorBody:(BOOL)wantsHTTPErrorBody
 {
