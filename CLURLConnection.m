@@ -1,6 +1,7 @@
 #import "CLURLConnection.h"
 
 #import <Foundation/Foundation.h>
+#import <objc/runtime.h>
 
 NSString *const HTTPErrorDomain = @"HTTPErrorDomain";
 NSString *const HTTPBody = @"HTTPBody";
@@ -203,7 +204,14 @@ static inline void connectionDidFinishLoading(id delegate, id connection)
 
 @end
 
-
+__attribute__ ((constructor)) static void initialize(void)
+{
+	SEL allocWithZone = @selector(allocWithZone:);
+	Method CLURLConnection_allocWithZone = class_getClassMethod([CLURLConnection class], allocWithZone);
+	BOOL added = class_addMethod(object_getClass([NSURLConnection class]), allocWithZone, method_getImplementation(CLURLConnection_allocWithZone), method_getTypeEncoding(CLURLConnection_allocWithZone));
+	if (!added)
+		NSLog(@"CLURLConnection initialization failed, using NSURLConnection.");
+}
 
 @implementation CLURLConnection
 
@@ -239,9 +247,9 @@ static NSMutableSet *sConnections = nil;
 	}
 }
 
-+ (id) connectionWithRequest:(NSURLRequest *)aRequest delegate:(id)delegate
++ (id) allocWithZone:(NSZone *)zone
 {
-	return [[[self alloc] initWithRequest:aRequest delegate:delegate] autorelease];
+	return NSAllocateObject([CLURLConnection class], 0, zone);
 }
 
 - (id) initWithRequest:(NSURLRequest *)aRequest delegate:(id)delegate startImmediately:(BOOL)startImmediately
