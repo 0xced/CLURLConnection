@@ -12,7 +12,7 @@ static BOOL sWantsHTTPErrorBody = NO;
 static inline NSString* httpErrorDescription(NSInteger statusCode)
 {
 	NSString *desc = NSLocalizedStringFromTable(@"Unknowns Status Code", @"HTTPErrors", "HTTP Unknown Status Code");
-
+	
 	switch (statusCode)
 	{
 		case 400: desc = NSLocalizedStringFromTable(@"Bad Request",                     @"HTTPErrors", "HTTP Status Code 400"); break;
@@ -51,7 +51,7 @@ static inline NSString* httpErrorDescription(NSInteger statusCode)
 		case 509: desc = NSLocalizedStringFromTable(@"Bandwidth Limit Exceeded",        @"HTTPErrors", "HTTP Status Code 509"); break;
 		case 510: desc = NSLocalizedStringFromTable(@"Not Extended",                    @"HTTPErrors", "HTTP Status Code 510"); break;
 	}
-
+	
 	return desc;
 }
 
@@ -86,6 +86,30 @@ static inline NSError* httpError(NSURL *responseURL, NSInteger httpStatusCode, N
 
 @implementation CLURLConnectionDelegateProxy
 
+static inline void connectionDidReceiveResponse(id delegate, id connection, NSURLResponse *response)
+{
+	if ([delegate respondsToSelector:@selector(connection:didReceiveResponse:)])
+		[delegate connection:connection didReceiveResponse:response];
+}
+
+static inline void connectionDidReceiveData(id delegate, id connection, NSData *data)
+{
+	if ([delegate respondsToSelector:@selector(connection:didReceiveData:)])
+		[delegate connection:connection didReceiveData:data];
+}
+
+static inline void connectionDidFailWithError(id delegate, id connection, NSError *error)
+{
+	if ([delegate respondsToSelector:@selector(connection:didFailWithError:)])
+		[delegate connection:connection didFailWithError:error];
+}
+
+static inline void connectionDidFinishLoading(id delegate, id connection)
+{
+	if ([delegate respondsToSelector:@selector(connectionDidFinishLoading:)])
+		[delegate connectionDidFinishLoading:connection];
+}
+
 - (id) initWithDelegate:(id)theDelegate
 {
 	delegate = [theDelegate retain];
@@ -103,7 +127,7 @@ static inline NSError* httpError(NSURL *responseURL, NSInteger httpStatusCode, N
 	httpStatusCode = 0;
 	if ([response isKindOfClass:[NSHTTPURLResponse class]])
 		httpStatusCode = [(NSHTTPURLResponse*)response statusCode];
-
+	
 	if (httpStatusCode >= 400)
 	{
 		if (sWantsHTTPErrorBody)
@@ -114,34 +138,25 @@ static inline NSError* httpError(NSURL *responseURL, NSInteger httpStatusCode, N
 		else
 		{
 			[connection cancel];
-
-			if ([delegate respondsToSelector:@selector(connection:didFailWithError:)])
-				[delegate connection:connection didFailWithError:httpError([response URL], httpStatusCode, nil)];
+			connectionDidFailWithError(delegate, connection, httpError([response URL], httpStatusCode, nil));
 		}
 	}
 	else
-	{
-		if ([delegate respondsToSelector:@selector(connection:didReceiveResponse:)])
-			[delegate connection:connection didReceiveResponse:response];
-	}
+		connectionDidReceiveResponse(delegate, connection, response);
 }
 
 - (void) connection:(CLURLConnection *)connection didReceiveData:(NSData *)data
 {
 	[httpBody appendData:data];
-
+	
 	if (httpStatusCode < 400)
-	{
-		if ([delegate respondsToSelector:@selector(connection:didReceiveData:)])
-			[delegate connection:connection didReceiveData:data];
-	}
+		connectionDidReceiveData(delegate, connection, data);
 }
 
 - (void) connection:(CLURLConnection *)connection didFailWithError:(NSError *)error
 {
-	if ([delegate respondsToSelector:@selector(connection:didFailWithError:)])
-		[delegate connection:connection didFailWithError:error];
-
+	connectionDidFailWithError(delegate, connection, error);
+	
 	[httpBody release]; httpBody = nil;
 	[responseURL release]; responseURL = nil;
 }
@@ -149,16 +164,10 @@ static inline NSError* httpError(NSURL *responseURL, NSInteger httpStatusCode, N
 - (void) connectionDidFinishLoading:(CLURLConnection *)connection
 {
 	if (httpStatusCode < 400)
-	{
-		if ([delegate respondsToSelector:@selector(connectionDidFinishLoading:)])
-			[delegate connectionDidFinishLoading:connection];
-	}
+		connectionDidFinishLoading(delegate, connection);
 	else
-	{
-		if ([delegate respondsToSelector:@selector(connection:didFailWithError:)])
-			[delegate connection:connection didFailWithError:httpError(responseURL, httpStatusCode, httpBody)];
-	}
-
+		connectionDidFailWithError(delegate, connection, httpError(responseURL, httpStatusCode, httpBody));
+	
 	[httpBody release]; httpBody = nil;
 	[responseURL release]; responseURL = nil;
 }
@@ -222,7 +231,7 @@ static inline NSError* httpError(NSURL *responseURL, NSInteger httpStatusCode, N
 {
 	if (!isScheduled)
 		[self scheduleInRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
-
+	
 	[super start];
 }
 
