@@ -27,6 +27,7 @@ extern NSString *const HTTPBody;
 {
 	@private
 	BOOL isScheduled;
+	NSURLRequest *request;
 }
 
 + (void) setWantsHTTPErrorBody:(BOOL)wantsHTTPErrorBody;

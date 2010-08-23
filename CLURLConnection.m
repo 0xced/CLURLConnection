@@ -69,6 +69,12 @@ static inline NSError* httpError(NSURL *responseURL, NSInteger httpStatusCode, N
 
 
 
+@interface CLURLConnection ()
++ (void) hideNetworkActivityIndicator:(CLURLConnection *)connection;
+@end
+
+
+
 @interface CLURLConnectionDelegateProxy : NSProxy
 {
 	id delegate;
@@ -159,6 +165,7 @@ static inline void connectionDidFinishLoading(id delegate, id connection)
 	
 	[httpBody release]; httpBody = nil;
 	[responseURL release]; responseURL = nil;
+	[CLURLConnection hideNetworkActivityIndicator:connection];
 }
 
 - (void) connectionDidFinishLoading:(CLURLConnection *)connection
@@ -170,6 +177,7 @@ static inline void connectionDidFinishLoading(id delegate, id connection)
 	
 	[httpBody release]; httpBody = nil;
 	[responseURL release]; responseURL = nil;
+	[CLURLConnection hideNetworkActivityIndicator:connection];
 }
 
 - (BOOL) respondsToSelector:(SEL)selector
@@ -204,21 +212,57 @@ static inline void connectionDidFinishLoading(id delegate, id connection)
 	sWantsHTTPErrorBody = wantsHTTPErrorBody;
 }
 
-+ (id) connectionWithRequest:(NSURLRequest *)request delegate:(id)delegate
+static NSMutableSet *sConnections = nil;
+
++ (void) showNetworkActivityIndicator:(CLURLConnection *)connection
 {
-	return [[[self alloc] initWithRequest:request delegate:delegate] autorelease];
+	if (![[[connection valueForKey:@"request"] URL] isFileURL])
+	{
+		if (sConnections == nil)
+			sConnections = [[NSMutableSet alloc] init];
+		
+		[sConnections addObject:connection];
+#if TARGET_OS_IPHONE
+		[UIApplication sharedApplication].networkActivityIndicatorVisible = YES;
+#endif
+	}
 }
 
-- (id) initWithRequest:(NSURLRequest *)request delegate:(id)delegate startImmediately:(BOOL)startImmediately
++ (void) hideNetworkActivityIndicator:(CLURLConnection *)connection
+{
+	[sConnections removeObject:connection];
+	if ([sConnections count] == 0)
+	{
+#if TARGET_OS_IPHONE
+		[UIApplication sharedApplication].networkActivityIndicatorVisible = NO;
+#endif
+	}
+}
+
++ (id) connectionWithRequest:(NSURLRequest *)aRequest delegate:(id)delegate
+{
+	return [[[self alloc] initWithRequest:aRequest delegate:delegate] autorelease];
+}
+
+- (id) initWithRequest:(NSURLRequest *)aRequest delegate:(id)delegate startImmediately:(BOOL)startImmediately
 {
 	isScheduled = startImmediately;
+	request = [aRequest retain];
 	CLURLConnectionDelegateProxy *proxy = [[[CLURLConnectionDelegateProxy alloc] initWithDelegate:delegate] autorelease];
+	if (startImmediately)
+		[CLURLConnection showNetworkActivityIndicator:self];
 	return [super initWithRequest:request delegate:proxy startImmediately:startImmediately];
 }
 
-- (id) initWithRequest:(NSURLRequest *)request delegate:(id)delegate
+- (id) initWithRequest:(NSURLRequest *)aRequest delegate:(id)delegate
 {
-	return [self initWithRequest:request delegate:delegate startImmediately:YES];
+	return [self initWithRequest:aRequest delegate:delegate startImmediately:YES];
+}
+
+- (void) dealloc
+{
+	[request release];
+	[super dealloc];
 }
 
 - (void) scheduleInRunLoop:(NSRunLoop *)runLoop forMode:(NSString *)mode
@@ -232,7 +276,14 @@ static inline void connectionDidFinishLoading(id delegate, id connection)
 	if (!isScheduled)
 		[self scheduleInRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
 	
+	[CLURLConnection showNetworkActivityIndicator:self];
 	[super start];
+}
+
+- (void) cancel
+{
+	[CLURLConnection hideNetworkActivityIndicator:self];
+	[super cancel];
 }
 
 @end
