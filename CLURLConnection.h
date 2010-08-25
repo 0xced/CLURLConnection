@@ -26,11 +26,11 @@ extern NSString *const HTTPBody;
 @interface CLURLConnection : NSURLConnection
 {
 	@private
+	BOOL isNSURLConnection;
 	BOOL isScheduled;
 	NSURLRequest *request;
 }
 
-+ (void) setHandleHTTPErrors:(BOOL)handleHTTPErrors;
 + (void) setWantsHTTPErrorBody:(BOOL)wantsHTTPErrorBody;
 
 @end

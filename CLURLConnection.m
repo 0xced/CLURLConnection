@@ -7,7 +7,6 @@ NSString *const HTTPErrorDomain = @"HTTPErrorDomain";
 NSString *const HTTPBody = @"HTTPBody";
 
 
-static BOOL sHandleHTTPErrors = YES;
 static BOOL sWantsHTTPErrorBody = NO;
 
 
@@ -73,6 +72,7 @@ static inline NSError* httpError(NSURL *responseURL, NSInteger httpStatusCode, N
 
 @interface CLURLConnection ()
 + (void) hideNetworkActivityIndicator:(CLURLConnection *)connection;
+- (BOOL) isNSURLConnection;
 @end
 
 
@@ -133,7 +133,7 @@ static inline void connectionDidFinishLoading(id delegate, id connection)
 - (void) connection:(CLURLConnection *)connection didReceiveResponse:(NSURLResponse *)response
 {
 	httpStatusCode = 0;
-	if (sHandleHTTPErrors && [response isKindOfClass:[NSHTTPURLResponse class]])
+	if (![connection isNSURLConnection] && [response isKindOfClass:[NSHTTPURLResponse class]])
 		httpStatusCode = [(NSHTTPURLResponse*)response statusCode];
 	
 	if (httpStatusCode >= 400)
@@ -216,11 +216,6 @@ __attribute__ ((constructor)) static void initialize(void)
 
 @implementation CLURLConnection
 
-+ (void) setHandleHTTPErrors:(BOOL)handleHTTPErrors
-{
-	sHandleHTTPErrors = handleHTTPErrors;
-}
-
 + (void) setWantsHTTPErrorBody:(BOOL)wantsHTTPErrorBody
 {
 	sWantsHTTPErrorBody = wantsHTTPErrorBody;
@@ -228,13 +223,18 @@ __attribute__ ((constructor)) static void initialize(void)
 
 static NSMutableSet *sConnections = nil;
 
++ (void) initialize
+{
+	if (self != [CLURLConnection class])
+		return;
+	
+	sConnections = [[NSMutableSet alloc] init];
+}
+
 + (void) showNetworkActivityIndicator:(CLURLConnection *)connection
 {
-	if (![[[connection valueForKey:@"request"] URL] isFileURL])
+	if (![[connection->request URL] isFileURL])
 	{
-		if (sConnections == nil)
-			sConnections = [[NSMutableSet alloc] init];
-		
 		[sConnections addObject:connection];
 #if TARGET_OS_IPHONE
 		[UIApplication sharedApplication].networkActivityIndicatorVisible = YES;
@@ -255,7 +255,14 @@ static NSMutableSet *sConnections = nil;
 
 + (id) allocWithZone:(NSZone *)zone
 {
-	return NSAllocateObject([CLURLConnection class], 0, zone);
+	CLURLConnection *connection = NSAllocateObject([CLURLConnection class], 0, zone);
+	connection->isNSURLConnection = (self == [NSURLConnection class]);
+	return connection;
+}
+
+- (BOOL) isNSURLConnection
+{
+	return isNSURLConnection;
 }
 
 - (id) initWithRequest:(NSURLRequest *)aRequest delegate:(id)delegate startImmediately:(BOOL)startImmediately
