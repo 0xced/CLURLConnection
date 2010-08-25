@@ -61,7 +61,7 @@ static inline NSError* httpError(NSURL *responseURL, NSInteger httpStatusCode, N
 	NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys:
 	                         responseURL, NSURLErrorKey,
 	                         responseURL, @"NSErrorFailingURLKey",
-	                         [responseURL absoluteString], NSErrorFailingURLStringKey,
+	                         [responseURL absoluteString], @"NSErrorFailingURLStringKey",
 	                         httpErrorDescription(httpStatusCode), NSLocalizedDescriptionKey,
 	                         httpBody, HTTPBody, nil];
 
