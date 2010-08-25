@@ -260,6 +260,11 @@ static NSMutableSet *sConnections = nil;
 	return connection;
 }
 
++ (id) connectionWithRequest:(NSURLRequest *)aRequest delegate:(id)delegate
+{
+	return [[[self alloc] initWithRequest:aRequest delegate:delegate] autorelease];
+}
+
 - (BOOL) isNSURLConnection
 {
 	return isNSURLConnection;
