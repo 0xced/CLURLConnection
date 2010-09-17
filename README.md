@@ -17,7 +17,7 @@ This is not accurate! A connection is scheduled on the current thread in the def
 
 • Automatic network activity indicator on iOS
 ---------------------------------------------
-On iOS, applications performing network connections are supposed to indicate their activity by toggling the UIApplication `networkActivityIndicatorVisible` property. Doing this manually is tedious. `CLURLConnection` takes care of automatically showing and hiding the network activity indicator. `CLURLConnection` does even toggle the network activity indicator for `NSURLConnection` instances. This is useful if you are using a library which creates `NSURLConnection` instances.
+On iOS, applications performing network connections are supposed to indicate their activity by toggling the UIApplication `networkActivityIndicatorVisible` property. Doing this manually is tedious. `CLURLConnection` takes care of automatically showing and hiding the network activity indicator. `CLURLConnection` even toggles the network activity indicator for `NSURLConnection` instances. This is useful if you are using a library which creates `NSURLConnection` instances.
 
 Usage
 =====
@@ -26,7 +26,7 @@ First, add
 
     #import "CLURLConnection.h"
 
-in your prefix header file (*_Prefix.pch), then just replace every occurrence of `[NSURLConnection alloc]` with `[CLURLConnection alloc]` and `[NSURLConnection connectionWithRequest:…]` with `[CLURLConnection connectionWithRequest:…]` in your projet source code.
+in your prefix header file (*_Prefix.pch), then just replace every occurrence of `[NSURLConnection alloc]` with `[CLURLConnection alloc]` and `[NSURLConnection connectionWithRequest:…]` with `[CLURLConnection connectionWithRequest:…]` in your project source code.
 
 Nothing is required for `NSURLConnection` instances to benefit from the automatic network activity indicator, just compile the CLURLConnection.m file in your project.
 
