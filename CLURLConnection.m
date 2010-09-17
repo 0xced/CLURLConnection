@@ -1,5 +1,8 @@
 #import "CLURLConnection.h"
 
+#if TARGET_OS_IPHONE
+#import <UIKit/UIApplication.h>
+#endif
 #import <Foundation/Foundation.h>
 #import <objc/runtime.h>
 
