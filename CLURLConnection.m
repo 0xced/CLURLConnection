@@ -71,7 +71,7 @@ static inline NSError* httpError(NSURL *responseURL, NSInteger httpStatusCode, N
 
 
 @interface CLURLConnection ()
-+ (void) hideNetworkActivityIndicator:(CLURLConnection *)connection;
++ (void) removeConnection:(CLURLConnection *)connection;
 - (BOOL) isNSURLConnection;
 @end
 
@@ -167,7 +167,7 @@ static inline void connectionDidFinishLoading(id delegate, id connection)
 	
 	[httpBody release]; httpBody = nil;
 	[responseURL release]; responseURL = nil;
-	[CLURLConnection hideNetworkActivityIndicator:connection];
+	[CLURLConnection removeConnection:connection];
 }
 
 - (void) connectionDidFinishLoading:(CLURLConnection *)connection
@@ -179,7 +179,7 @@ static inline void connectionDidFinishLoading(id delegate, id connection)
 	
 	[httpBody release]; httpBody = nil;
 	[responseURL release]; responseURL = nil;
-	[CLURLConnection hideNetworkActivityIndicator:connection];
+	[CLURLConnection removeConnection:connection];
 }
 
 - (BOOL) respondsToSelector:(SEL)selector
@@ -231,26 +231,35 @@ static NSMutableSet *sConnections = nil;
 	sConnections = [[NSMutableSet alloc] init];
 }
 
-+ (void) showNetworkActivityIndicator:(CLURLConnection *)connection
++ (void) showNetworkActivityIndicator
+{
+	[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(hideNetworkActivityIndicator)	object:nil];
+#if TARGET_OS_IPHONE
+	[UIApplication sharedApplication].networkActivityIndicatorVisible = YES;
+#endif
+}
+
++ (void) hideNetworkActivityIndicator
+{
+#if TARGET_OS_IPHONE
+	[UIApplication sharedApplication].networkActivityIndicatorVisible = NO;
+#endif
+}
+
++ (void) addConnection:(CLURLConnection *)connection
 {
 	if (![[connection->request URL] isFileURL])
 	{
 		[sConnections addObject:connection];
-#if TARGET_OS_IPHONE
-		[UIApplication sharedApplication].networkActivityIndicatorVisible = YES;
-#endif
+		[self showNetworkActivityIndicator];
 	}
 }
 
-+ (void) hideNetworkActivityIndicator:(CLURLConnection *)connection
++ (void) removeConnection:(CLURLConnection *)connection
 {
 	[sConnections removeObject:connection];
 	if ([sConnections count] == 0)
-	{
-#if TARGET_OS_IPHONE
-		[UIApplication sharedApplication].networkActivityIndicatorVisible = NO;
-#endif
-	}
+		[self performSelector:@selector(hideNetworkActivityIndicator) withObject:nil afterDelay:0.5];
 }
 
 + (id) allocWithZone:(NSZone *)zone
@@ -276,7 +285,7 @@ static NSMutableSet *sConnections = nil;
 	request = [aRequest retain];
 	CLURLConnectionDelegateProxy *proxy = [[[CLURLConnectionDelegateProxy alloc] initWithDelegate:delegate] autorelease];
 	if (startImmediately)
-		[CLURLConnection showNetworkActivityIndicator:self];
+		[CLURLConnection addConnection:self];
 	return [super initWithRequest:request delegate:proxy startImmediately:startImmediately];
 }
 
@@ -302,13 +311,13 @@ static NSMutableSet *sConnections = nil;
 	if (!isScheduled)
 		[self scheduleInRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
 	
-	[CLURLConnection showNetworkActivityIndicator:self];
+	[CLURLConnection addConnection:self];
 	[super start];
 }
 
 - (void) cancel
 {
-	[CLURLConnection hideNetworkActivityIndicator:self];
+	[CLURLConnection removeConnection:self];
 	[super cancel];
 }
 
