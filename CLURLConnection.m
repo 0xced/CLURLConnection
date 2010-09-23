@@ -251,18 +251,24 @@ static NSMutableSet *sConnections = nil;
 
 + (void) addConnection:(CLURLConnection *)connection
 {
-	if (![[connection->request URL] isFileURL])
+	@synchronized(self)
 	{
-		[sConnections addObject:connection];
-		[self showNetworkActivityIndicator];
+		if (![[connection->request URL] isFileURL])
+		{
+			[sConnections addObject:connection];
+			[self showNetworkActivityIndicator];
+		}
 	}
 }
 
 + (void) removeConnection:(CLURLConnection *)connection
 {
-	[sConnections removeObject:connection];
-	if ([sConnections count] == 0)
-		[self performSelector:@selector(hideNetworkActivityIndicator) withObject:nil afterDelay:0.5];
+	@synchronized(self)
+	{
+		[sConnections removeObject:connection];
+		if ([sConnections count] == 0)
+			[self performSelector:@selector(hideNetworkActivityIndicator) withObject:nil afterDelay:0.5];
+	}
 }
 
 + (id) allocWithZone:(NSZone *)zone
