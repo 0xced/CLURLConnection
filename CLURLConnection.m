@@ -214,7 +214,11 @@ __attribute__ ((constructor)) static void initialize(void)
 	Method CLURLConnection_allocWithZone = class_getClassMethod([CLURLConnection class], allocWithZone);
 	BOOL added = class_addMethod(object_getClass([NSURLConnection class]), allocWithZone, method_getImplementation(CLURLConnection_allocWithZone), method_getTypeEncoding(CLURLConnection_allocWithZone));
 	if (!added)
-		NSLog(@"CLURLConnection initialization failed, using NSURLConnection.");
+	{
+#if TARGET_OS_IPHONE
+		NSLog(@"NSURLConnection instances will not benefit from the automatic network activity indicator.");
+#endif
+	}
 }
 
 @implementation CLURLConnection
