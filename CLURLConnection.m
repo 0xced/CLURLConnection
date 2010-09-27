@@ -97,30 +97,6 @@ static inline NSError* httpError(NSURL *responseURL, NSInteger httpStatusCode, N
 
 @implementation CLURLConnectionDelegateProxy
 
-static inline void connectionDidReceiveResponse(id delegate, id connection, NSURLResponse *response)
-{
-	if ([delegate respondsToSelector:@selector(connection:didReceiveResponse:)])
-		[delegate connection:connection didReceiveResponse:response];
-}
-
-static inline void connectionDidReceiveData(id delegate, id connection, NSData *data)
-{
-	if ([delegate respondsToSelector:@selector(connection:didReceiveData:)])
-		[delegate connection:connection didReceiveData:data];
-}
-
-static inline void connectionDidFailWithError(id delegate, id connection, NSError *error)
-{
-	if ([delegate respondsToSelector:@selector(connection:didFailWithError:)])
-		[delegate connection:connection didFailWithError:error];
-}
-
-static inline void connectionDidFinishLoading(id delegate, id connection)
-{
-	if ([delegate respondsToSelector:@selector(connectionDidFinishLoading:)])
-		[delegate connectionDidFinishLoading:connection];
-}
-
 - (id) initWithDelegate:(id)theDelegate
 {
 	delegate = [theDelegate retain];
@@ -131,6 +107,12 @@ static inline void connectionDidFinishLoading(id delegate, id connection)
 {
 	[delegate release];
 	[super dealloc];
+}
+
+- (void) sendDelegateMessage:(SEL)connectionDelegateSelector forConnection:(CLURLConnection *)connection withObject:(id)object
+{
+	if ([delegate respondsToSelector:connectionDelegateSelector])
+		[delegate performSelector:connectionDelegateSelector withObject:connection withObject:object];
 }
 
 - (void) connection:(CLURLConnection *)connection didReceiveResponse:(NSURLResponse *)response
@@ -149,11 +131,11 @@ static inline void connectionDidFinishLoading(id delegate, id connection)
 		else
 		{
 			[connection cancel];
-			connectionDidFailWithError(delegate, connection, httpError([response URL], httpStatusCode, nil));
+			[self sendDelegateMessage:@selector(connection:didFailWithError:) forConnection:connection withObject:httpError([response URL], httpStatusCode, nil)];
 		}
 	}
 	else
-		connectionDidReceiveResponse(delegate, connection, response);
+		[self sendDelegateMessage:_cmd forConnection:connection withObject:response];
 }
 
 - (void) connection:(CLURLConnection *)connection didReceiveData:(NSData *)data
@@ -161,12 +143,12 @@ static inline void connectionDidFinishLoading(id delegate, id connection)
 	[httpBody appendData:data];
 	
 	if (httpStatusCode < 400)
-		connectionDidReceiveData(delegate, connection, data);
+		[self sendDelegateMessage:_cmd forConnection:connection withObject:data];
 }
 
 - (void) connection:(CLURLConnection *)connection didFailWithError:(NSError *)error
 {
-	connectionDidFailWithError(delegate, connection, error);
+	[self sendDelegateMessage:_cmd forConnection:connection withObject:error];
 	
 	[httpBody release]; httpBody = nil;
 	[responseURL release]; responseURL = nil;
@@ -176,9 +158,9 @@ static inline void connectionDidFinishLoading(id delegate, id connection)
 - (void) connectionDidFinishLoading:(CLURLConnection *)connection
 {
 	if (httpStatusCode < 400)
-		connectionDidFinishLoading(delegate, connection);
+		[self sendDelegateMessage:_cmd forConnection:connection withObject:nil];
 	else
-		connectionDidFailWithError(delegate, connection, httpError(responseURL, httpStatusCode, httpBody));
+		[self sendDelegateMessage:@selector(connection:didFailWithError:) forConnection:connection withObject:httpError(responseURL, httpStatusCode, httpBody)];
 	
 	[httpBody release]; httpBody = nil;
 	[responseURL release]; responseURL = nil;
