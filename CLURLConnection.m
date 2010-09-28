@@ -10,9 +10,6 @@ NSString *const HTTPErrorDomain = @"HTTPErrorDomain";
 NSString *const HTTPBody = @"HTTPBody";
 
 
-static BOOL sWantsHTTPErrorBody = NO;
-
-
 static inline NSError* httpError(NSURL *responseURL, NSInteger httpStatusCode, NSData *httpBody)
 {
 	NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys:
@@ -26,12 +23,10 @@ static inline NSError* httpError(NSURL *responseURL, NSInteger httpStatusCode, N
 }
 
 
-
 @interface CLURLConnection ()
 + (void) removeConnection:(CLURLConnection *)connection;
 - (BOOL) isNSURLConnection;
 @end
-
 
 
 @interface CLURLConnectionDelegateProxy : NSProxy
@@ -77,7 +72,7 @@ static inline NSError* httpError(NSURL *responseURL, NSInteger httpStatusCode, N
 	
 	if (httpStatusCode >= 400)
 	{
-		if (sWantsHTTPErrorBody)
+		if ([connection wantsHTTPErrorBody])
 		{
 			httpBody = [[NSMutableData alloc] init];
 			responseURL = [[response URL] retain];
@@ -144,6 +139,7 @@ static inline NSError* httpError(NSURL *responseURL, NSInteger httpStatusCode, N
 
 @end
 
+
 __attribute__ ((constructor)) static void initialize(void)
 {
 	SEL allocWithZone = @selector(allocWithZone:);
@@ -157,12 +153,8 @@ __attribute__ ((constructor)) static void initialize(void)
 	}
 }
 
-@implementation CLURLConnection
 
-+ (void) setWantsHTTPErrorBody:(BOOL)wantsHTTPErrorBody
-{
-	sWantsHTTPErrorBody = wantsHTTPErrorBody;
-}
+@implementation CLURLConnection
 
 static NSMutableSet *sConnections = nil;
 
@@ -230,6 +222,7 @@ static NSMutableSet *sConnections = nil;
 
 - (id) initWithRequest:(NSURLRequest *)aRequest delegate:(id)delegate startImmediately:(BOOL)startImmediately
 {
+	wantsHTTPErrorBody = NO;
 	isScheduled = startImmediately;
 	request = [aRequest retain];
 	CLURLConnectionDelegateProxy *proxy = [[[CLURLConnectionDelegateProxy alloc] initWithDelegate:delegate] autorelease];
@@ -247,6 +240,16 @@ static NSMutableSet *sConnections = nil;
 {
 	[request release];
 	[super dealloc];
+}
+
+- (void) setWantsHTTPErrorBody:(BOOL)flag
+{
+	wantsHTTPErrorBody = flag;
+}
+
+- (BOOL) wantsHTTPErrorBody
+{
+	return wantsHTTPErrorBody;
 }
 
 - (void) scheduleInRunLoop:(NSRunLoop *)runLoop forMode:(NSString *)mode

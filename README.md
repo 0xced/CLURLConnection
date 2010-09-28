@@ -5,7 +5,7 @@ About
 
 • Handle HTTP errors with NSError
 ---------------------------------
-A `NSURLConnection` will send the `connection:didReceiveData:` and `connectionDidFinishLoading:` messages to its delegate, even if the HTTP status code is greater or equal to 400. The Hypertext Transfer Protocol (RFC 2616) states that 4xx and 5xx status codes are respectively client errors and server errors. A `CLURLConnection` will instead send the `connection:didFailWithError:` message to its delegate with an appropriate `NSError` of the `HTTPErrorDomain`. By default, the body of the HTTP response is ignored. Still, if you need the HTTP body, you can configure the behaviour of all `CLURLConnection` instances with `+[CLURLConnection setWantsHTTPErrorBody:YES]`. You then obtain the HTTP body as `NSData` with `[[error userInfo] objectForKey:HTTPBody]`.
+A `NSURLConnection` will send the `connection:didReceiveData:` and `connectionDidFinishLoading:` messages to its delegate, even if the HTTP status code is greater or equal to 400. The Hypertext Transfer Protocol (RFC 2616) states that 4xx and 5xx status codes are respectively client errors and server errors. A `CLURLConnection` will instead send the `connection:didFailWithError:` message to its delegate with an appropriate `NSError` of the `HTTPErrorDomain`. By default, the body of the HTTP response is ignored. Still, if you need the HTTP body, you can configure the behaviour of `CLURLConnection` instances with `-[CLURLConnection setWantsHTTPErrorBody:YES]`. You then obtain the HTTP body as `NSData` with `[[error userInfo] objectForKey:HTTPBody]`.
 
 • Fix scheduling documentation bug
 ----------------------------------

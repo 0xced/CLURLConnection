@@ -31,10 +31,12 @@ extern NSString *const HTTPBody;
 {
 	@private
 	BOOL isNSURLConnection;
+	BOOL wantsHTTPErrorBody;
 	BOOL isScheduled;
 	NSURLRequest *request;
 }
 
-+ (void) setWantsHTTPErrorBody:(BOOL)wantsHTTPErrorBody;
+- (void) setWantsHTTPErrorBody:(BOOL)flag;
+- (BOOL) wantsHTTPErrorBody;
 
 @end
