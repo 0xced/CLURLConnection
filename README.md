@@ -13,7 +13,7 @@ A `NSURLConnection` will send the `connection:didReceiveData:` and `connectionDi
 
 > At creation, a connection is scheduled on the current thread (the one where the creation takes place) in the default mode.
 
-This is not accurate! A connection is scheduled on the current thread in the default mode only if the connection starts immediately. If you use `initWithRequest:delegate:startImmediately:` and pass `startImmediately:NO`, the connection is **not** scheduled and your application will crash. See http://www.mail-archive.com/cocoa-dev@lists.apple.com/msg32455.html for more information.
+This is not accurate! A connection is scheduled on the current thread in the default mode only if the connection starts immediately. If you use `initWithRequest:delegate:startImmediately:` and pass `startImmediately:NO`, the connection is **not** scheduled and your application will crash. See [Why does -[NSURLConnection start] crash?](http://www.cocoabuilder.com/archive/cocoa/233390-why-does-nsurlconnection-start-crash.html) for more information.
 
 • Automatic network activity indicator on iOS
 ---------------------------------------------
