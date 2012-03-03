@@ -222,13 +222,17 @@ static NSMutableSet *sConnections = nil;
 
 - (id) initWithRequest:(NSURLRequest *)aRequest delegate:(id)delegate startImmediately:(BOOL)startImmediately
 {
+	CLURLConnectionDelegateProxy *proxy = [[[CLURLConnectionDelegateProxy alloc] initWithDelegate:delegate] autorelease];
+	if (!(self = [super initWithRequest:aRequest delegate:proxy startImmediately:startImmediately]))
+		return nil;
+	
 	wantsHTTPErrorBody = NO;
 	isScheduled = startImmediately;
 	request = [aRequest retain];
-	CLURLConnectionDelegateProxy *proxy = [[[CLURLConnectionDelegateProxy alloc] initWithDelegate:delegate] autorelease];
 	if (startImmediately)
 		[CLURLConnection addConnection:self];
-	return [super initWithRequest:request delegate:proxy startImmediately:startImmediately];
+	
+	return self;
 }
 
 - (id) initWithRequest:(NSURLRequest *)aRequest delegate:(id)delegate
