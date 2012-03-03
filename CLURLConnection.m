@@ -127,6 +127,11 @@ static inline NSError* httpError(NSURL *responseURL, NSInteger httpStatusCode, N
 		return [delegate respondsToSelector:selector];
 }
 
+- (id) forwardingTargetForSelector:(SEL)selector
+{
+	return delegate;
+}
+
 - (NSMethodSignature *) methodSignatureForSelector:(SEL)selector
 {
 	return [delegate methodSignatureForSelector:selector];
