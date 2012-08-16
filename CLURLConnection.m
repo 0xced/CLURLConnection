@@ -204,7 +204,7 @@ static NSMutableSet *sConnections = nil;
 
 + (void) delayHideNetworkActivityIndicator
 {
-	[self performSelector:@selector(hideNetworkActivityIndicator) withObject:nil afterDelay:0.25];
+	[self performSelector:@selector(hideNetworkActivityIndicator) withObject:nil afterDelay:0.25 inModes:[NSArray arrayWithObject:NSRunLoopCommonModes]];
 }
 
 + (void) hideNetworkActivityIndicator
@@ -298,7 +298,7 @@ static NSMutableSet *sConnections = nil;
 - (void) start
 {
 	if (!isScheduled)
-		[self scheduleInRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
+		[self scheduleInRunLoop:[NSRunLoop currentRunLoop] forMode:NSRunLoopCommonModes];
 	
 	[CLURLConnection addConnection:self];
 	[super start];
