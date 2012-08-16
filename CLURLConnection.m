@@ -24,6 +24,7 @@ static inline NSError* httpError(NSURL *responseURL, NSInteger httpStatusCode, N
 
 
 @interface CLURLConnection ()
++ (void) addConnection:(CLURLConnection *)connection;
 + (void) removeConnection:(CLURLConnection *)connection;
 - (BOOL) isNSURLConnection;
 @end
@@ -145,6 +146,24 @@ static inline NSError* httpError(NSURL *responseURL, NSInteger httpStatusCode, N
 @end
 
 
+@interface NSURLConnection (CLURLConnection)
++ (NSData *) cl_sendSynchronousRequest:(NSURLRequest *)request returningResponse:(NSURLResponse **)response error:(NSError **)error;
+@end
+
+@implementation NSURLConnection (CLURLConnection)
+
++ (NSData *) cl_sendSynchronousRequest:(NSURLRequest *)request returningResponse:(NSURLResponse **)response error:(NSError **)error
+{
+	CLURLConnection *connection = [[[self alloc] initWithRequest:request delegate:nil startImmediately:NO] autorelease];
+	[CLURLConnection addConnection:connection];
+	NSData *data = [self cl_sendSynchronousRequest:request returningResponse:response error:error];
+	[CLURLConnection removeConnection:connection];
+	return data;
+}
+
+@end
+
+
 __attribute__ ((constructor)) static void initialize(void)
 {
 	SEL allocWithZone = @selector(allocWithZone:);
@@ -156,6 +175,10 @@ __attribute__ ((constructor)) static void initialize(void)
 		NSLog(@"NSURLConnection instances will not benefit from the automatic network activity indicator.");
 #endif
 	}
+	
+	Method sendSynchronousRequest = class_getClassMethod([NSURLConnection class], @selector(sendSynchronousRequest:returningResponse:error:));
+	Method cl_sendSynchronousRequest = class_getClassMethod([CLURLConnection class], @selector(cl_sendSynchronousRequest:returningResponse:error:));
+	method_exchangeImplementations(sendSynchronousRequest, cl_sendSynchronousRequest);
 }
 
 
@@ -179,6 +202,11 @@ static NSMutableSet *sConnections = nil;
 #endif
 }
 
++ (void) delayHideNetworkActivityIndicator
+{
+	[self performSelector:@selector(hideNetworkActivityIndicator) withObject:nil afterDelay:0.25];
+}
+
 + (void) hideNetworkActivityIndicator
 {
 #if TARGET_OS_IPHONE
@@ -193,7 +221,7 @@ static NSMutableSet *sConnections = nil;
 		if (![[connection->request URL] isFileURL])
 		{
 			[sConnections addObject:connection];
-			[self showNetworkActivityIndicator];
+			[self performSelector:@selector(showNetworkActivityIndicator) onThread:[NSThread mainThread] withObject:nil waitUntilDone:NO];
 		}
 	}
 }
@@ -204,7 +232,7 @@ static NSMutableSet *sConnections = nil;
 	{
 		[sConnections removeObject:connection];
 		if ([sConnections count] == 0)
-			[self performSelector:@selector(hideNetworkActivityIndicator) withObject:nil afterDelay:0.5];
+			[self performSelector:@selector(delayHideNetworkActivityIndicator) onThread:[NSThread mainThread] withObject:nil waitUntilDone:NO];
 	}
 }
 
